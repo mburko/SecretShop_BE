@@ -91,12 +91,7 @@ DATABASES = {
     }
 }
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'users.backends.JWTAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        )
-}
+AUTHENTICATION_BACKENDS = ('users.backends.JWTAuthentication',)
 
 AUTH_USER_MODEL = 'users.User'
 

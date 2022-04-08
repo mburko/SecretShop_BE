@@ -17,7 +17,7 @@ class UserManager(BaseUserManager):
 		email = self.normalize_email(email)
 		user = self.model(email=email, **extra_fields)
 		user.is_superuser = is_superuser
-		user.set_password(password, )
+		user.set_password(password)
 		user.save(using=self._db)
 		return user
 
@@ -60,4 +60,4 @@ class User(AbstractBaseUser, PermissionsMixin):
 			'email': self.email,
 			'exp': int(dt.timestamp())
 		}, key=key, algorithm='HS256')
-		return token.decode('utf-8')
+		return token
