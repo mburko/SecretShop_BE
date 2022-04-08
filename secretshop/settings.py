@@ -93,7 +93,13 @@ DATABASES = {
 
 AUTH_USER_MODEL = 'users.User'
 
-AUTHENTICATION_BACKENDS = ('users.backends.JWTAuthentication',)
+AUTHENTICATION_BACKENDS = ('users.backends.JWTAuthentication', 'django.contrib.auth.backends.ModelBackend')
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'users.backends.JWTAuthentication',
+    ),
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators

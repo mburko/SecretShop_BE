@@ -8,7 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
-	authentication_header_prefix = 'Bearer'
+	authentication_header_prefix = 'token'
 
 	def authenticate(self, request):
 		request.user = None
@@ -34,4 +34,4 @@ class JWTAuthentication(authentication.BaseAuthentication):
 			raise exceptions.AuthenticationFailed(
 				detail="User does not exists")
 
-		return (user, token)
+		return user, token
