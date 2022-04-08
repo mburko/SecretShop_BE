@@ -1,6 +1,5 @@
 from rest_framework import status
-from users.serializers import LoginSerializer, \
-	RegistrationSerializer, UsersSerializer
+from users.serializers import RegistrationSerializer, UsersSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -89,7 +88,7 @@ class LogOutAPIView(APIView):
 		response = Response()
 		response.delete_cookie("jwt_session")
 		response.data = {
-			"message" : "Successful log out"
+			"message": "Successful log out"
 		}
 		return response
 
