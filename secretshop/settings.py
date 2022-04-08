@@ -91,14 +91,9 @@ DATABASES = {
     }
 }
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'users.backends.JWTAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        )
-}
-
 AUTH_USER_MODEL = 'users.User'
+
+AUTHENTICATION_BACKENDS = ('users.backends.JWTAuthentication',)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
