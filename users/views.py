@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny
 
 
 class RegistrationAPIView(APIView):
-	permission_classes = (AllowAny, )
+	permission_classes = [AllowAny]
 	serializer_class = RegistrationSerializer
 	
 	def post(self, request):
@@ -15,7 +15,7 @@ class RegistrationAPIView(APIView):
 
 		if serializer.is_valid():
 			serializer.save()
-			return Response({'token': serializer.data.get('token', None)},
+			return Response({'token': serializer.data.get('token', None)}, 
 				status=status.HTTP_201_CREATED)
 
 		return Response(serializer.errors, 
@@ -23,7 +23,7 @@ class RegistrationAPIView(APIView):
 
 
 class LoginAPIView(APIView):
-	permission_classes = (AllowAny, )
+	permission_classes = [AllowAny]
 	serializer_class = LoginSerializer
 
 	def post(self, request):

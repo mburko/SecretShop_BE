@@ -34,4 +34,4 @@ class JWTAuthentication(authentication.BaseAuthentication):
 			raise exceptions.AuthenticationFailed(
 				detail="User does not exists")
 
-		return user, token
+		return (user, token)

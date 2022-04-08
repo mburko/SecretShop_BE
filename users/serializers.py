@@ -9,7 +9,7 @@ import os
 class UsersSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = User
-		fields = ['login', 'email', 'password']
+		fields = ['login', 'email','password']
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
