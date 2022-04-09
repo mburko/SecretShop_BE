@@ -29,7 +29,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-	login = models.CharField(max_length=20,
+	username = models.CharField(max_length=20,
 		blank=False, unique=True, validators=[RegexValidator(
 			regex=r'^[a-zA-Z0-9\_\-\.]*$'), MinLengthValidator(5)])
 	email = models.EmailField(max_length=40, blank=False, unique=True)
@@ -38,7 +38,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 		validators=[RegexValidator(
 			regex=r'^([a-zA-Z0-9\_\-\.]+\\[a-zA-Z0-9\_\-\.]+)+$')])
 
-	USERNAME_FIELD = 'login'
+	USERNAME_FIELD = 'username'
 	REQUIRED_FIELDS = ['email', 'password']
 	objects = UserManager()
 
