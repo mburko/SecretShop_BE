@@ -52,8 +52,8 @@ class LoginAPIView(APIView):
 		}, key=os.getenv("JWT_CODE"), algorithm='HS256')
 
 		response = Response()
-
-		response.set_cookie(key="jwt_session", value=token, httponly=True, expires=dt.timestamp())
+		_cookie_lifetime = 2592000
+		response.set_cookie(key="jwt_session", value=token, httponly=True, max_age=_cookie_lifetime)
 		response.data = {
 			"jwt_session": token
 		}
@@ -66,7 +66,7 @@ class UserAPIView(APIView):
 		token = request.COOKIES.get("jwt_session")
 
 		if not token:
-			raise AuthenticationFailed("Unauthenticated")
+			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
 
 		import os
 		from dotenv import find_dotenv, load_dotenv
@@ -76,7 +76,7 @@ class UserAPIView(APIView):
 		try:
 			payload = jwt.decode(token, os.getenv("JWT_CODE"), algorithms=["HS256"])
 		except jwt.ExpiredSignatureError:
-			raise AuthenticationFailed("Unauthenticated")
+			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
 
 		user = User.objects.filter(email=payload["email"]).first()
 
