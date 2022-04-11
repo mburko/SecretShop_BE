@@ -1,26 +1,37 @@
-from django.shortcuts import render
 from rest_framework.response import Response
-from questions.serializers import QuestionsSerializer
 from rest_framework.permissions import AllowAny
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import APIView
 from rest_framework import status
+
 from django.db.models import ObjectDoesNotExist
 from questions.models import Questions
 from questions.serializers import QuestionsSerializer
-from rest_framework.decorators import APIView
 
 
 class QuestionsEditAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = QuestionsSerializer
+    paginator_class = PageNumberPagination()
 
     def get(self, request):
-        questions = Questions.objects.all()
-
         author_id = request.GET.get('author_id', None)
+        limit = request.GET.get("limit", None)
+        page = request.GET.get("page", None)
+        queryset = Questions.objects.all()
+
+        if limit is not None:
+            self.paginator_class.page_size = limit
+        if page is not None:
+            self.paginator_class.page = page
 
         if author_id is not None:
-            questions = questions.filter(author_id=author_id)
-        serializer = self.serializer_class(questions, many=True)
+            queryset = queryset.filter(author_id=author_id)
+
+        if not queryset:
+            return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):

@@ -98,6 +98,8 @@ AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = ('users.backends.JWTAuthentication', 'django.contrib.auth.backends.ModelBackend')
 
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 5,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'users.backends.JWTAuthentication',
     ),
