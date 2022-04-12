@@ -5,6 +5,13 @@ from django.core.validators import RegexValidator, MinLengthValidator
 from users.models import User
 
 
+class Tags(models.Model):
+    tag_name = models.CharField(max_length=40, validators=(RegexValidator(regex=r'^#[a-zA-Z0-9#\+\-]{1,40}'), ), unique=True)
+
+    def __str__(self):
+        return self.tag_name
+
+
 class Questions(models.Model):
     OPENED = 1
     CLOSED = 0
@@ -24,3 +31,4 @@ class Questions(models.Model):
     number_of_likes = models.IntegerField(blank=True, default=0)
     number_of_dislikes = models.IntegerField(blank=True, default=0)
     fame_index = models.FloatField(blank=True, default=1)
+    tags = models.ManyToManyField(Tags)
