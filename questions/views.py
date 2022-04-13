@@ -80,13 +80,6 @@ class TagsEditAPIView(APIView):
     serializer_class = TagsSerializer
     paginator_class = PageNumberPagination()
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def get(self, request):
         limit = request.GET.get("limit", None)
         page = request.GET.get("page", None)
@@ -102,6 +95,13 @@ class TagsEditAPIView(APIView):
 
         serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TagsEditByIdAPIView(APIView):
