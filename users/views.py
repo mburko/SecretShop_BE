@@ -19,7 +19,7 @@ class RegistrationAPIView(APIView):
 
 		if serializer.is_valid():
 			serializer.save()
-			return Response({'token': serializer.data.get('token', None)},
+			return Response(serializer.data,
 				status=status.HTTP_201_CREATED)
 
 		return Response(serializer.errors, 
@@ -60,7 +60,8 @@ class LoginAPIView(APIView):
 
 		return response
 
-
+#TODO: Add pagination
+#TODO: Get all users, users by fields
 class UserAPIView(APIView):
 	def get(self, request):
 		token = request.COOKIES.get("jwt_session")

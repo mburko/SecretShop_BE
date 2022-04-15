@@ -10,7 +10,5 @@ class AnswersSerializer(serializers.ModelSerializer):
             "author_id",
             "question_id",
             "text_body",
-            "date_of_publication",
-            "number_of_likes",
-            "number_of_dislikes"
+            "date_of_publication"
         )
