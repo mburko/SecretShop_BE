@@ -48,11 +48,11 @@ class QuestionsEditByIdAPIView(APIView):
 
     def get(self, request, pk):
         try:
-            question = Questions.objects.get(pk=pk)
+            queryset = Questions.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = self.serializer_class(question)
+        serializer = self.serializer_class(queryset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):

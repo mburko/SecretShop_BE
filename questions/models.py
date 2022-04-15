@@ -12,7 +12,6 @@ class Tags(models.Model):
         return self.tag_name
 
 
-#TODO: Fix datetime of publication
 class Questions(models.Model):
     OPENED = 1
     CLOSED = 0

@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.pagination import PageNumberPagination
 from users.models import User
 import jwt
 from datetime import datetime
@@ -63,6 +64,8 @@ class LoginAPIView(APIView):
 #TODO: Add pagination
 #TODO: Get all users, users by fields
 class UserAPIView(APIView):
+	pagination_class = PageNumberPagination
+
 	def get(self, request):
 		token = request.COOKIES.get("jwt_session")
 
