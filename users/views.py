@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from users.serializers import RegistrationSerializer, UsersSerializer
 from rest_framework.views import APIView
@@ -61,11 +62,39 @@ class LoginAPIView(APIView):
 
 		return response
 
-#TODO: Add pagination
-#TODO: Get all users, users by fields
-class UserAPIView(APIView):
-	pagination_class = PageNumberPagination
 
+class UserAPIView(APIView):
+	paginator_class = PageNumberPagination()
+	serializer_class = RegistrationSerializer
+
+	def get(self, request, pk):
+		try:
+			queryset = User.objects.get(pk=pk)
+		except ObjectDoesNotExist:
+			return Response({"message": "User with such ID doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+
+		serializer = self.serializer_class(queryset)
+
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+	def get(self, request):
+		queryset = User.objects.all()
+		limit = request.GET.get("limit", len(queryset))
+		page = request.GET.get("page", None)
+
+		self.paginator_class.page_size = limit
+		if page is not None:
+			self.paginator_class.page = page
+
+		if not queryset:
+			return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+
+		serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request),
+										   many=True)
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserProfileView(APIView):
 	def get(self, request):
 		token = request.COOKIES.get("jwt_session")
 
