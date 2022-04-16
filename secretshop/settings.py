@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users.apps.UsersConfig',
     'questions.apps.QuestionsConfig',
+    'answers.apps.AnswersConfig',
     'corsheaders'
 ]
 

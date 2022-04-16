@@ -25,7 +25,7 @@ class Questions(models.Model):
     title = models.CharField(max_length=255, blank=False, validators=(MinLengthValidator(20), ))
     text_body = models.CharField(max_length=1500, blank=False, validators=(MinLengthValidator(20),))
     status = models.CharField(max_length=2, blank=True, choices=STATUS_CHOICES, default=OPENED)
-    date_of_publication = models.DateTimeField(blank=True, default=datetime.now())
+    date_of_publication = models.DateTimeField(blank=True, default=datetime.now)
     number_of_views = models.IntegerField(blank=True, default=0)
     number_of_comments = models.IntegerField(blank=True, default=0)
     number_of_likes = models.IntegerField(blank=True, default=0)
