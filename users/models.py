@@ -11,32 +11,43 @@ from datetime import timedelta
 
 
 class UserManager(BaseUserManager):
-	def _create_user(self, email, password, is_superuser, **extra_fields):
+	def _create_user(self, email, password, is_superuser, role, **extra_fields):
 		if not email:
 			raise ValueError('No email adress')
 		email = self.normalize_email(email)
 		user = self.model(email=email, **extra_fields)
 		user.is_superuser = is_superuser
+		user.role = role
 		user.set_password(password, )
 		user.save(using=self._db)
 		return user
 
 	def create_user(self, email, password, **extra_fields):
-		return self._create_user(email, password, False, **extra_fields)
+		return self._create_user(email, password, False, 1, **extra_fields)
 
 	def create_superuser(self, email, password, **extra_fields):
-		return self._create_user(email, password, True, **extra_fields)
+		return self._create_user(email, password, True, 2, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+
+	FIRST_ROLE = 1
+	SECOND_ROLE = 2
+	THIRD_ROLE = 3
+
+	ROLES_CHOICES = [
+		(FIRST_ROLE, "User"),
+		(SECOND_ROLE, "Admin"),
+		(THIRD_ROLE, "Premium")
+	]
+
 	username = models.CharField(max_length=20,
-		blank=False, unique=True, validators=[RegexValidator(
-			regex=r'^[a-zA-Z0-9\_\-\.]*$'), MinLengthValidator(5)])
+		blank=False, unique=True, validators=(RegexValidator(
+			regex=r'^[a-zA-Z0-9\_\-\.]*$'), MinLengthValidator(5),))
 	email = models.EmailField(max_length=40, blank=False, unique=True)
 	password = CharField(max_length=256, blank=False)
-	avatar = CharField(max_length=256,
-		validators=[RegexValidator(
-			regex=r'^([a-zA-Z0-9\_\-\.]+\\[a-zA-Z0-9\_\-\.]+)+$')])
+	avatar = CharField(max_length=256, validators=(RegexValidator(regex=r'^([a-zA-Z0-9\_\-\.]+\\[a-zA-Z0-9\_\-\.]+)+$'),))
+	role = models.CharField(max_length=30, blank=True, choices=ROLES_CHOICES, default=FIRST_ROLE)
 
 	USERNAME_FIELD = 'username'
 	REQUIRED_FIELDS = ['email', 'password']
