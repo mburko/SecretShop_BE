@@ -31,4 +31,4 @@ class Questions(models.Model):
     number_of_likes = models.IntegerField(blank=True, default=0)
     number_of_dislikes = models.IntegerField(blank=True, default=0)
     fame_index = models.FloatField(blank=True, default=1)
-    tags = models.ManyToManyField(Tags)
+    tags = models.ManyToManyField(Tags, blank=True)

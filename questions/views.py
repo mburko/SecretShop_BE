@@ -13,22 +13,23 @@ class QuestionsEditAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = QuestionsSerializer
     paginator_class = PageNumberPagination()
+    order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
 
     def get(self, request):
         queryset = Questions.objects.all()
-        author_id = request.GET.get('author_id', None)
         limit = request.GET.get("limit", len(queryset))
         page = request.GET.get("page", None)
-
+        ordering_field = request.GET.get("order_by", "fame_index")
+        order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
 
-        if author_id is not None:
-            queryset = queryset.filter(author_id=author_id)
-
         if not queryset:
             return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if ordering_field in self.order_by_list:
+            queryset = queryset.order_by(f"{order_direction}{ordering_field}")
 
         serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -45,13 +46,19 @@ class QuestionsEditByIdAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = QuestionsSerializer
     paginator_class = PageNumberPagination
+    order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
     doesnt_exist_message = {"message": "Question doesn't exist"}
 
     def get(self, request, author_id):
-        try:
-            queryset = Questions.objects.all().filter(author_id=author_id)
-        except ObjectDoesNotExist:
+        queryset = Questions.objects.all().filter(author_id=author_id)
+
+        if not queryset:
             return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
+
+        ordering_field = request.GET.get("order_by", "fame_index")
+        order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
+        if ordering_field in self.order_by_list:
+            queryset = queryset.order_by(f"{order_direction}{ordering_field}")
 
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
