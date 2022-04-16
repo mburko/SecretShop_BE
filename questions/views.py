@@ -40,19 +40,20 @@ class QuestionsEditAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#TODO: Edit get by author
+
 class QuestionsEditByIdAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = QuestionsSerializer
+    paginator_class = PageNumberPagination
     doesnt_exist_message = {"message": "Question doesn't exist"}
 
-    def get(self, request, pk):
+    def get(self, request, author_id):
         try:
-            queryset = Questions.objects.get(pk=pk)
+            queryset = Questions.objects.all().filter(author_id=author_id)
         except ObjectDoesNotExist:
             return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = self.serializer_class(queryset)
+        serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
