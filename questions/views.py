@@ -4,19 +4,26 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import APIView
 from rest_framework import status
 
-from django.db.models import ObjectDoesNotExist
+from django.db.models import ObjectDoesNotExist, Q
 from questions.models import Questions, Tags
-from questions.serializers import QuestionsSerializer, TagsSerializer
+from questions.serializers import QuestionsSerializer, QuestionsAddSerializer, TagsSerializer
 
 
 class QuestionsEditAPIView(APIView):
     permission_classes = (AllowAny,)
-    serializer_class = QuestionsSerializer
+    serializer_class = QuestionsAddSerializer
     paginator_class = PageNumberPagination()
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
 
     def get(self, request):
+        search_query = request.GET.get("search", "")
         queryset = Questions.objects.all()
+
+        queryset = queryset.filter(Q(title__icontains=search_query) | Q(text_body__icontains=search_query))
+
+        if not queryset:
+            return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+
         limit = request.GET.get("limit", len(queryset))
         page = request.GET.get("page", None)
         ordering_field = request.GET.get("order_by", "fame_index")
@@ -25,13 +32,11 @@ class QuestionsEditAPIView(APIView):
         if page is not None:
             self.paginator_class.page = page
 
-        if not queryset:
-            return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if ordering_field in self.order_by_list:
             queryset = queryset.order_by(f"{order_direction}{ordering_field}")
 
-        serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
+        serializer = QuestionsSerializer(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
