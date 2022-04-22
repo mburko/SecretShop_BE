@@ -138,4 +138,3 @@ class TagsEditByIdAPIView(APIView):
             return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
         tag.delete()
         return Response({"message": f"Questions {pk} was successfully deleted"}, status=status.HTTP_200_OK)
-

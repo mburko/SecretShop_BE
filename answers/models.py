@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from django.db import models
-from django.core.validators import RegexValidator, MinLengthValidator
+from django.core.validators import MinLengthValidator
+
 from users.models import User
 from questions.models import Questions
 
@@ -14,3 +15,4 @@ class Answers(models.Model):
     number_of_likes = models.IntegerField(blank=True, default=0)
     number_of_dislikes = models.IntegerField(blank=True, default=0)
     fame_index = models.FloatField(blank=True, default=1)
+    users_reactions = models.ManyToManyField(User, through='QuestionReaction')

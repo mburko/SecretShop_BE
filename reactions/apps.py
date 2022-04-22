@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class AnswersConfig(AppConfig):
+class ReactionsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'answers'
+    name = 'reactions'
