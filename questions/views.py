@@ -8,6 +8,8 @@ from django.db.models import ObjectDoesNotExist
 from questions.models import Questions, Tags
 from questions.serializers import QuestionsSerializer, TagsSerializer
 
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+
 
 class QuestionsEditAPIView(APIView):
     permission_classes = (AllowAny,)
@@ -16,20 +18,27 @@ class QuestionsEditAPIView(APIView):
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
 
     def get(self, request):
-        queryset = Questions.objects.all()
-        limit = request.GET.get("limit", len(queryset))
+        queryset = None
+        limit = request.GET.get("limit", 42)#len(queryset))
         page = request.GET.get("page", None)
         ordering_field = request.GET.get("order_by", "fame_index")
         order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
+        search = request.GET.get("search_query")
+        search_vector = SearchVector("title", weight="A") + SearchVector("text_body", weight="B")
+        search_query = SearchQuery(search)
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
 
-        if not queryset:
-            return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
-
         if ordering_field in self.order_by_list:
-            queryset = queryset.order_by(f"{order_direction}{ordering_field}")
+            queryset = Questions.objects.annotate(rank=SearchRank(search_vector, search_query)) \
+                .filter(rank__gte=0.3) \
+                .order_by("-rank")
+
+        if not queryset:
+            queryset = Questions.objects.all().order_by(f"{order_direction}{ordering_field}")
+            if not queryset:
+                return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
