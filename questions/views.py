@@ -13,10 +13,19 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 
 def request_parsing(string):
-    #При розростанні словника(10+ елементів) створити json файл !
     dict_ = {
-        '<sh>': '#',
-        '<p>': '+'
+        '{sh}': '#',
+        '{p}': '+',
+        '{td}': ':',
+        '{qm}': '?',
+        '{dog}': '@',
+        '{em}': '!',
+        '{and}': '&',
+        '{rs}': '/',
+        '{lb}': '(',
+        '{rb}': ')',
+        '{lsb}': '[',
+        '{rsb}': ']',
     }
     for i in dict_:
         string = string.replace(i, dict_[i])
@@ -35,7 +44,7 @@ class QuestionsEditAPIView(APIView):
         page = request.GET.get("page", None)
         # ordering_field = request.GET.get("order_by", "fame_index")
         # order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
-        try:
+        try: #Formulating the tag list, and add the '#' symbol to the beginning
             search_tags = ["#" + i for i in request_parsing(request.GET.get("tags")).split(',')]
         except AttributeError:
             search_tags = None
@@ -47,28 +56,27 @@ class QuestionsEditAPIView(APIView):
         if page is not None:
             self.paginator_class.page = page
 
-        if search_tags is not None:
+        if search_tags is not None:  # Search for questions that contain at least one of the listed tags
             tags_id = Tags.objects.filter(tag_name__in=search_tags).values_list("id")
             queryset = queryset.filter(tags__in=tags_id).order_by("-number_of_likes")
 
-        if author is not None:
+        if author is not None:  # Search for questions written by the selected author
             try:
                 author_id = User.objects.filter(username__exact=author).values_list("id")[0]
             except IndexError:
                 pass
             else:
-                queryset = queryset.filter(author_id__exact=author_id)  # .order_by("-number_of_likes")
+                queryset = queryset.filter(author_id__exact=author_id).order_by("-number_of_likes")
 
         # if ordering_field in self.order_by_list:
-        if search is not None:
+        if search is not None:  # Search for questions by words
             queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)) \
                 .filter(rank__gte=0.3) \
                 .order_by("-rank")
 
         if not queryset:
-            # queryset = Questions.objects.all().order_by(f"{order_direction}{ordering_field}")
-            # if not queryset:
             return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+
         serializer = self.serializer_class(
             self.paginator_class.paginate_queryset(queryset=queryset.distinct(), request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
