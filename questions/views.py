@@ -6,7 +6,30 @@ from rest_framework import status
 
 from django.db.models import ObjectDoesNotExist
 from questions.models import Questions, Tags
+from users.models import User
 from questions.serializers import QuestionsSerializer, TagsSerializer
+
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+
+
+def request_parsing(string):
+    dict_ = {
+        '{sh}': '#',
+        '{p}': '+',
+        '{td}': ':',
+        '{qm}': '?',
+        '{dog}': '@',
+        '{em}': '!',
+        '{and}': '&',
+        '{rs}': '/',
+        '{lb}': '(',
+        '{rb}': ')',
+        '{lsb}': '[',
+        '{rsb}': ']',
+    }
+    for i in dict_:
+        string = string.replace(i, dict_[i])
+    return string
 
 
 class QuestionsEditAPIView(APIView):
@@ -17,21 +40,45 @@ class QuestionsEditAPIView(APIView):
 
     def get(self, request):
         queryset = Questions.objects.all()
-        limit = request.GET.get("limit", len(queryset))
+        limit = request.GET.get("limit", 42)  # len(queryset))
         page = request.GET.get("page", None)
-        ordering_field = request.GET.get("order_by", "fame_index")
-        order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
+        # ordering_field = request.GET.get("order_by", "fame_index")
+        # order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
+        try: #Formulating the tag list, and add the '#' symbol to the beginning
+            search_tags = ["#" + i for i in request_parsing(request.GET.get("tags")).split(',')]
+        except AttributeError:
+            search_tags = None
+        search = request.GET.get("search_query")
+        search_vector = SearchVector("title", weight="A") + SearchVector("text_body", weight="B")
+        search_query = SearchQuery(search)
+        author = request.GET.get("author")
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
 
+        if search_tags is not None:  # Search for questions that contain at least one of the listed tags
+            tags_id = Tags.objects.filter(tag_name__in=search_tags).values_list("id")
+            queryset = queryset.filter(tags__in=tags_id).order_by("-number_of_likes")
+
+        if author is not None:  # Search for questions written by the selected author
+            try:
+                author_id = User.objects.filter(username__exact=author).values_list("id")[0]
+            except IndexError:
+                pass
+            else:
+                queryset = queryset.filter(author_id__exact=author_id).order_by("-number_of_likes")
+
+        # if ordering_field in self.order_by_list:
+        if search is not None:  # Search for questions by words
+            queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)) \
+                .filter(rank__gte=0.3) \
+                .order_by("-rank")
+
         if not queryset:
             return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if ordering_field in self.order_by_list:
-            queryset = queryset.order_by(f"{order_direction}{ordering_field}")
-
-        serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
+        serializer = self.serializer_class(
+            self.paginator_class.paginate_queryset(queryset=queryset.distinct(), request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
