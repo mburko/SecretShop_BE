@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from questions.models import Questions, Tags
+from questions.models import Questions, Tags, QuestionReaction
 
 
 class QuestionsSerializer(serializers.ModelSerializer):
@@ -32,3 +32,13 @@ class TagsSerializer(serializers.ModelSerializer):
             "id",
             "tag_name"
         )
+
+
+class QuestionReactionSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = QuestionReaction
+		fields = (
+			'reaction_type',
+			'user',
+			'question'
+		)
