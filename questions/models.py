@@ -32,3 +32,6 @@ class Questions(models.Model):
     number_of_dislikes = models.IntegerField(blank=True, default=0)
     fame_index = models.FloatField(blank=True, default=1)
     tags = models.ManyToManyField(Tags, blank=True)
+
+    def __str__(self):
+        return self.title
