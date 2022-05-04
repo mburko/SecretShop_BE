@@ -7,7 +7,8 @@ from rest_framework import status
 from django.db.models import ObjectDoesNotExist
 from questions.models import Questions, Tags
 from users.models import User
-from questions.serializers import QuestionsSerializer, TagsSerializer
+from questions.serializers import QuestionsSerializer, TagsSerializer,\
+    QuestionsAddSerializer
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
@@ -34,7 +35,7 @@ def request_parsing(string):
 
 class QuestionsEditAPIView(APIView):
     permission_classes = (AllowAny,)
-    serializer_class = QuestionsSerializer
+    serializer_class = QuestionsAddSerializer
     paginator_class = PageNumberPagination()
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
 
@@ -77,7 +78,7 @@ class QuestionsEditAPIView(APIView):
         if not queryset:
             return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = self.serializer_class(
+        serializer = QuestionsSerializer(
             self.paginator_class.paginate_queryset(queryset=queryset.distinct(), request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
