@@ -67,16 +67,6 @@ class UserAPIView(APIView):
 	paginator_class = PageNumberPagination()
 	serializer_class = RegistrationSerializer
 
-	def get(self, request, pk):
-		try:
-			queryset = User.objects.get(pk=pk)
-		except ObjectDoesNotExist:
-			return Response({"message": "User with such ID doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
-
-		serializer = self.serializer_class(queryset)
-
-		return Response(serializer.data, status=status.HTTP_200_OK)
-
 	def get(self, request):
 		queryset = User.objects.all()
 		limit = request.GET.get("limit", len(queryset))
@@ -93,6 +83,19 @@ class UserAPIView(APIView):
 										   many=True)
 		return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+class UserAPIGetByIdView(APIView):
+	serializer_class = RegistrationSerializer
+
+	def get(self, request, pk):
+		try:
+			queryset = User.objects.get(pk=pk)
+		except ObjectDoesNotExist:
+			return Response({"message": "User with such ID doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+
+		serializer = self.serializer_class(queryset)
+
+		return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UserProfileView(APIView):
 	def get(self, request):

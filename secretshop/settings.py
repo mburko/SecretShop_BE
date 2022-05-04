@@ -19,8 +19,8 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 # Quick-start development settings - unsuitable for production
@@ -30,7 +30,7 @@ STATIC_URL = '/static/'
 SECRET_KEY = 'django-insecure-#1jl2-64sh&_jk7f0^w5_-dcl@8d!(k4#7%9bvu451ulz!podf'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['mydjangoapp21.herokuapp.com', '127.0.0.1']
 
