@@ -1,1 +1,1 @@
-web: gunicorn SecretShopProject.wsgi --log-file -
+web: gunicorn secretshop.asgi --log-file -
