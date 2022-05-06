@@ -11,7 +11,11 @@ class QuestionsSerializer(serializers.ModelSerializer):
             "title",
             "text_body",
             "date_of_publication",
-            "tags"
+            "tags",
+            "number_of_views",
+            "number_of_comments",
+            "number_of_likes",
+            "number_of_dislikes"
         )
 
 class QuestionsAddSerializer(serializers.ModelSerializer):
