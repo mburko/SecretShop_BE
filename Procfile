@@ -1,0 +1,1 @@
+web: gunicorn secretshop.wsgi --log-file -
