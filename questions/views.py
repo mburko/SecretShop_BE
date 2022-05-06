@@ -33,7 +33,8 @@ class QuestionsEditAPIView(APIView):
 			text_body__icontains=search_query))
 
         if not queryset:
-            return Response({"message": "Questions not found"},
+            return Response(
+                data={"message": "Questions not found"},
 				status=status.HTTP_404_NOT_FOUND)
 
         limit = request.GET.get("limit", len(queryset))
@@ -51,17 +52,24 @@ class QuestionsEditAPIView(APIView):
 
         serializer = QuestionsSerializer(
 			self.paginator_class.paginate_queryset(
-				queryset=queryset, request=request), many=True)
-        return Response(serializer.data, 
+				    queryset=queryset, 
+                    request=request),
+                many=True)
+
+        return Response(
+            data=serializer.data, 
 			status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, 
+            return Response(
+                data=serializer.data, 
 				status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, 
+
+        return Response(
+            data=serializer.errors, 
 			status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -79,10 +87,11 @@ class QuestionsEditByIdAPIView(APIView):
     doesnt_exist_message = {"message": "Question doesn't exist"}
 
     def get(self, request, author_id):
-        queryset = Questions.objects.all().filter(author_id=author_id)
+        queryset = Questions.objects.filter(author_id=author_id)
 
         if not queryset:
-            return Response(self.doesnt_exist_message, 
+            return Response(
+                data=self.doesnt_exist_message, 
 				status=status.HTTP_404_NOT_FOUND)
 
         ordering_field = request.GET.get("order_by", "fame_index")
@@ -92,30 +101,44 @@ class QuestionsEditByIdAPIView(APIView):
             queryset = queryset.order_by(f"{order_direction}{ordering_field}")
 
         serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data, 
+        return Response(
+            data=serializer.data, 
 			status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         try:
             question = Questions.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, 
+            return Response(
+                data=self.doesnt_exist_message, 
 				status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(question, data=request.data)
+
+        serializer = self.serializer_class(
+            instance=question, 
+            data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, 
+            return Response(
+                data=serializer.data, 
 				status=status.HTTP_200_OK)
-        return Response(serializer.errors, 
+
+        return Response(
+            data=serializer.errors, 
 			status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
             question = Questions.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                data=self.doesnt_exist_message, 
+                status=status.HTTP_404_NOT_FOUND)
+
         question.delete()
-        return Response({"message": f"Question {pk} was successfully deleted"}, status=status.HTTP_200_OK)
+        return Response(
+            data={"message": f"Question {pk} was successfully deleted"}, 
+            status=status.HTTP_200_OK)
 
 
 class TagsEditAPIView(APIView):
@@ -134,7 +157,8 @@ class TagsEditAPIView(APIView):
             self.paginator_class.page = page
 
         if not queryset:
-            return Response({"message": "Questions not found"}, 
+            return Response(
+                data={"message": "Questions not found"}, 
 				status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(
@@ -142,17 +166,23 @@ class TagsEditAPIView(APIView):
 				queryset=queryset, 
 				request=request), 
 			many=True)
-        return Response(serializer.data, 
+
+        return Response(
+            data=serializer.data, 
 			status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = self.serializer_class(
 			data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, 
+            return Response(
+                data=serializer.data, 
 				status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, 
+
+        return Response(
+            data=serializer.errors, 
 			status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -165,24 +195,30 @@ class TagsEditByIdAPIView(APIView):
         try:
             tag = Tags.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                data=self.doesnt_exist_message, 
+                status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(tag)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            data=serializer.data, 
+            status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         try:
             tag = Tags.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, 
+            return Response(
+                data=self.doesnt_exist_message, 
 				status=status.HTTP_404_NOT_FOUND)
         tag.delete()
-        return Response({"message": f"Questions {pk} was successfully deleted"}, 
+        return Response(
+            data={"message": f"Questions {pk} was successfully deleted"}, 
 			status=status.HTTP_200_OK)
 
 
-class QuestionReactionSerializer(APIView):
-    permission_classes = (IsAuthenticated,)
+class QuestionReactionView(APIView):
+    permission_classes = (AllowAny,)
     serializer_class = QuestionReactionSerializer
 
     def post(self, request):
@@ -190,19 +226,42 @@ class QuestionReactionSerializer(APIView):
             data=request.data)
 
         if serializer.is_valid():
+            data = serializer.validated_data
+            
             try:
                 res = QuestionReaction.objects.get(
-                    question=serializer.data["question"],
-                    user=serializer.data["user"])
-                serializer = self.serializer_class(
-                    instance=res, 
-                    data=request.data)
+                    question=data["question"],
+                    user=data["user"])
+                if res.reaction_type == data["reaction_type"]:
+                    res.delete()
+                else:
+                    res.reaction_type = data["reaction_type"]
+                    res.save()
             except ObjectDoesNotExist:
-                pass
-            serializer.save()
-            return Response(
-                data=serializer.data,
-                status=status.HTTP_202_ACCEPTED)
+                serializer.save()
+
+            number_of_likes = QuestionReaction.objects.filter(
+                question=data["question"],
+                reaction_type=QuestionReaction.ReactionType.LIKE).count()
+            number_of_dislikes = QuestionReaction.objects.filter(
+                question=data["question"],
+                reaction_type=QuestionReaction.ReactionType.DISLIKE).count()
+
+            try:
+                question = Questions.objects.get(
+                    pk=data["question"].id)
+                question.number_of_likes = number_of_likes
+                question.number_of_dislikes = number_of_dislikes
+                question.save()
+
+                return Response(
+                    data=serializer.data,
+                    status=status.HTTP_202_ACCEPTED)
+
+            except ObjectDoesNotExist:
+                return Response(
+                    data={"Error": "Something is wrong with db."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         return Response(
             data=serializer.errors,

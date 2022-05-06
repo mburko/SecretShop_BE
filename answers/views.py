@@ -19,7 +19,8 @@ class AnswersEditAPIView(APIView):
     def get(self, request):
         queryset = self.queryset.all()
         if not queryset:
-            return Response({"message": "Questions not found"}, 
+            return Response(
+				data={"message": "Questions not found"}, 
 				status=status.HTTP_404_NOT_FOUND)
 
         limit = request.GET.get("limit", len(queryset))
@@ -34,7 +35,9 @@ class AnswersEditAPIView(APIView):
 				queryset=queryset, 
 				request=request),
             many=True)
-        return Response(serializer.data, 
+
+        return Response(
+			data=serializer.data, 
 			status=status.HTTP_200_OK)
 
     def post(self, request):
@@ -42,9 +45,12 @@ class AnswersEditAPIView(APIView):
 			data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, 
+            return Response(
+				data=serializer.data, 
 				status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, 
+
+        return Response(
+			data=serializer.errors, 
 			status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -58,7 +64,8 @@ class AnswersEditByIdAPIView(APIView):
         queryset = Answers.objects.all().filter(
 			question_id=question_id)
         if not queryset:
-            return Response(self.doesnt_exist_message, 
+            return Response(
+				data=self.doesnt_exist_message, 
 				status=status.HTTP_404_NOT_FOUND)
 
         serializer = AnswersSerializer(queryset, many=True)
@@ -69,30 +76,40 @@ class AnswersEditByIdAPIView(APIView):
         try:
             answer = Answers.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, 
+            return Response(
+				data=self.doesnt_exist_message, 
 				status=status.HTTP_404_NOT_FOUND)
-        serializer = self.serializer_class(answer, 
+
+        serializer = self.serializer_class(
+			instance=answer, 
 			data=request.data)
+
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, 
+            return Response(
+				data=serializer.data, 
 				status=status.HTTP_200_OK)
-        return Response(serializer.errors, 
+
+        return Response(
+			data=serializer.errors, 
 			status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
             answer = Answers.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, 
+            return Response(
+				data=self.doesnt_exist_message, 
 				status=status.HTTP_404_NOT_FOUND)
+
         answer.delete()
-        return Response({"message": f"Question {pk} was successfully deleted"},
+        return Response(
+			data={"message": f"Question {pk} was successfully deleted"},
 			status=status.HTTP_200_OK)
 
 
-class AnswerReactionSerializer(APIView):
-    permission_classes = (IsAuthenticated,)
+class AnswerReactionView(APIView):
+    permission_classes = (AllowAny,)
     serializer_class = AnswerReactionSerializer
 
     def post(self, request):
@@ -100,19 +117,42 @@ class AnswerReactionSerializer(APIView):
             data=request.data)
 
         if serializer.is_valid():
+            data = serializer.validated_data
+
             try:
                 res = AnswerReaction.objects.get(
                     answer=serializer.data["answer"],
                     user=serializer.data["user"])
-                serializer = self.serializer_class(
-                    instance=res, 
-                    data=request.data)
+                if res.reaction_type == data["reaction_type"]:
+                    res.delete()
+                else:
+                    res.reaction_type = data["reaction_type"]
+                    res.save()
             except ObjectDoesNotExist:
-                pass
-            serializer.save()
-            return Response(
-                data=serializer.data,
-                status=status.HTTP_202_ACCEPTED)
+                serializer.save()
+
+            number_of_likes = AnswerReaction.objects.filter(
+                answer=data["answer"],
+                reaction_type=AnswerReaction.ReactionType.LIKE).count()
+            number_of_dislikes = AnswerReaction.objects.filter(
+                answer=data["answer"],
+                reaction_type=AnswerReaction.ReactionType.DISLIKE).count()
+
+            try:
+                answer = Answers.objects.get(
+                    pk=data["answer"].id)
+                answer.number_of_likes = number_of_likes
+                answer.number_of_dislikes = number_of_dislikes
+                answer.save()
+
+                return Response(
+                    data=serializer.data,
+                    status=status.HTTP_202_ACCEPTED)
+
+            except ObjectDoesNotExist:
+                return Response(
+                    data={"Error": "Something is wrong with db."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
         return Response(
             data=serializer.errors,

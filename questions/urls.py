@@ -8,4 +8,5 @@ urlpatterns = [
     re_path(r'questions/([0-9]+)', views.QuestionsEditByIdAPIView.as_view()),
     re_path(r'^tags$', views.TagsEditAPIView.as_view()),
     re_path(r'tags/([0-9]+)', views.TagsEditByIdAPIView.as_view()),
+	re_path(r'^question_react$', views.QuestionReactionView.as_view()),
 ]
