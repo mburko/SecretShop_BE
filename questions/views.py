@@ -52,6 +52,7 @@ class QuestionsEditAPIView(APIView):
         search = request.GET.get("search_query")
         search_vector = SearchVector("title", weight="A") + SearchVector("text_body", weight="B")
         search_query = SearchQuery(search)
+        order_by = request.GET.get("order_by")
         author = request.GET.get("author")
         self.paginator_class.page_size = limit
         if page is not None:
@@ -77,7 +78,8 @@ class QuestionsEditAPIView(APIView):
 
         if not queryset:
             return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
-
+        if order_by is not None:
+            queryset = queryset.order_by("-"+order_by)
         serializer = QuestionsSerializer(
             self.paginator_class.paginate_queryset(queryset=queryset.distinct(), request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
