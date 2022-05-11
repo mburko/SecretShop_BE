@@ -25,10 +25,17 @@ class AnswersEditAPIView(APIView):
 
         limit = request.GET.get("limit", len(queryset))
         page = request.GET.get("page", None)
-
+        author_id = request.GET.get("author_id")
+        order_by = request.GET.get("order_by")
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
+
+        if author_id is not None:
+            queryset = queryset.filter(author_id__exact=author_id)
+
+        if order_by is not None:
+            queryset = queryset.order_by(order_by)
 
         serializer = AnswersSerializer(
 			self.paginator_class.paginate_queryset(
