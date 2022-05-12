@@ -43,8 +43,6 @@ class QuestionsEditAPIView(APIView):
         queryset = Questions.objects.all()
         limit = request.GET.get("limit", 42)  # len(queryset))
         page = request.GET.get("page", None)
-        # ordering_field = request.GET.get("order_by", "fame_index")
-        # order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
         try: #Formulating the tag list, and add the '#' symbol to the beginning
             search_tags = ["#" + i for i in request_parsing(request.GET.get("tags")).split(',')]
         except AttributeError:
@@ -60,7 +58,7 @@ class QuestionsEditAPIView(APIView):
 
         if search_tags is not None:  # Search for questions that contain at least one of the listed tags
             tags_id = Tags.objects.filter(tag_name__in=search_tags).values_list("id")
-            queryset = queryset.filter(tags__in=tags_id).order_by("-number_of_likes")
+            queryset = queryset.filter(tags__in=tags_id)
 
         if author is not None:  # Search for questions written by the selected author
             try:
@@ -68,9 +66,8 @@ class QuestionsEditAPIView(APIView):
             except IndexError:
                 pass
             else:
-                queryset = queryset.filter(author_id__exact=author_id).order_by("-number_of_likes")
+                queryset = queryset.filter(author_id__exact=author_id)
 
-        # if ordering_field in self.order_by_list:
         if search is not None:  # Search for questions by words
             queryset = queryset.annotate(rank=SearchRank(search_vector, search_query)) \
                 .filter(rank__gte=0.3) \
@@ -79,7 +76,7 @@ class QuestionsEditAPIView(APIView):
         if not queryset:
             return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
         if order_by is not None:
-            queryset = queryset.order_by("-"+order_by)
+            queryset = queryset.order_by(order_by)
         serializer = QuestionsSerializer(
             self.paginator_class.paginate_queryset(queryset=queryset.distinct(), request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -104,18 +101,12 @@ class QuestionsEditByIdAPIView(APIView):
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
     doesnt_exist_message = {"message": "Question doesn't exist"}
 
-    def get(self, request, author_id):
-        queryset = Questions.objects.all().filter(author_id=author_id)
-
-        if not queryset:
+    def get(self, request, pk):
+        try:
+            question = Questions.objects.get(pk=pk)
+        except ObjectDoesNotExist:
             return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
-
-        ordering_field = request.GET.get("order_by", "fame_index")
-        order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
-        if ordering_field in self.order_by_list:
-            queryset = queryset.order_by(f"{order_direction}{ordering_field}")
-
-        serializer = self.serializer_class(queryset, many=True)
+        serializer = self.serializer_class(question)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
