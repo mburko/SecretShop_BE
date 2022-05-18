@@ -104,7 +104,6 @@ class UserProfileView(APIView):
 
 	def get(self, request):
 		token = request.COOKIES.get("jwt_session")
-
 		if not token:
 			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
 
