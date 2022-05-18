@@ -6,6 +6,7 @@ from rest_framework import status
 
 from django.db.models import ObjectDoesNotExist
 from answers.models import Answers, AnswerReaction
+from questions.models import Questions
 from answers.serializers import \
 	AnswersSerializer, AnswersSerializerForGet, AnswerReactionSerializer
 
@@ -56,6 +57,10 @@ class AnswersEditAPIView(APIView):
 			data=request.data)
         if serializer.is_valid():
             serializer.save()
+            question = Questions.objects.get(pk=request.data["question_id"])
+            #question.number_of_comments = question.number_of_comments + 1
+            question.number_of_comments = Answers.objects.filter(question_id=question.id).count()
+            question.save()
             return Response(
 				data=serializer.data, 
 				status=status.HTTP_201_CREATED)
