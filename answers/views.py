@@ -27,12 +27,16 @@ class AnswersEditAPIView(APIView):
         page = request.GET.get("page", None)
         author_id = request.GET.get("author_id")
         order_by = request.GET.get("order_by")
+        question_id = request.GET.get("question_id")
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
 
         if author_id is not None:
             queryset = queryset.filter(author_id__exact=author_id)
+
+        if question_id is not None:
+            queryset = queryset.filter(question_id__exact=question_id)
 
         if order_by is not None:
             queryset = queryset.order_by(order_by)
@@ -67,17 +71,13 @@ class AnswersEditByIdAPIView(APIView):
     paginator_class = PageNumberPagination()
     doesnt_exist_message = {"message": "Question doesn't exist"}
 
-    def get(self, request, question_id):
-        queryset = Answers.objects.all().filter(
-			question_id=question_id)
-        if not queryset:
-            return Response(
-				data=self.doesnt_exist_message, 
-				status=status.HTTP_404_NOT_FOUND)
-
-        serializer = AnswersSerializer(queryset, many=True)
-        return Response(serializer.data, 
-			status=status.HTTP_200_OK)
+    def get(self, request, pk):
+        try:
+            answer = Answers.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
+        serializer = AnswersSerializer(answer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         try:
