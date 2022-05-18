@@ -128,8 +128,8 @@ class AnswerReactionView(APIView):
 
             try:
                 res = AnswerReaction.objects.get(
-                    answer=serializer.data["answer"],
-                    user=serializer.data["user"])
+                    answer=serializer.validated_data["answer"],
+                    user=serializer.validated_data["user"])
                 if res.reaction_type == data["reaction_type"]:
                     res.delete()
                 else:
