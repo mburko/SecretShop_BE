@@ -16,7 +16,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework_swagger.views import get_swagger_view
-from questions.views import QuestionViewSchema
 
 schema_view = get_swagger_view(title='SecretShop API')
 

@@ -7,7 +7,6 @@ from rest_framework import status
 from django.db.models import ObjectDoesNotExist
 from answers.models import Answers
 from answers.serializers import AnswersSerializer, AnswersSerializerForGet
-
 import coreapi
 from rest_framework.schemas import AutoSchema
 

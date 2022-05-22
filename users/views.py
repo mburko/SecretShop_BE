@@ -10,7 +10,6 @@ from users.models import User
 import jwt
 from datetime import datetime
 from datetime import timedelta
-
 import coreapi
 from rest_framework.schemas import AutoSchema
 

@@ -10,7 +10,6 @@ from users.models import User
 from questions.serializers import QuestionsSerializer, TagsSerializer
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
-
 import coreapi
 from rest_framework.schemas import AutoSchema
 
