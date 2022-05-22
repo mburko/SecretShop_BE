@@ -11,6 +11,28 @@ from questions.serializers import QuestionsSerializer, TagsSerializer
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
+import coreapi
+from rest_framework.schemas import AutoSchema
+
+
+class QuestionViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('title'), coreapi.Field('text_body'),
+                            coreapi.Field('tags')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
+class TagsViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('tag_name')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
 
 def request_parsing(string):
     dict_ = {
@@ -37,6 +59,7 @@ class QuestionsEditAPIView(APIView):
     serializer_class = QuestionsSerializer
     paginator_class = PageNumberPagination()
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
+    schema = QuestionViewSchema()
 
     def get(self, request):
         queryset = Questions.objects.all()
@@ -95,6 +118,7 @@ class QuestionsEditByIdAPIView(APIView):
     paginator_class = PageNumberPagination
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
     doesnt_exist_message = {"message": "Question doesn't exist"}
+    schema = QuestionViewSchema()
 
     def get(self, request, author_id):
         queryset = Questions.objects.all().filter(author_id=author_id)
@@ -134,6 +158,7 @@ class TagsEditAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = TagsSerializer
     paginator_class = PageNumberPagination()
+    schema = TagsViewSchema()
 
     def get(self, request):
         limit = request.GET.get("limit", None)
@@ -163,6 +188,7 @@ class TagsEditByIdAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = TagsSerializer
     doesnt_exist_message = {"message": "Tag doesn't exist"}
+    schema = TagsViewSchema()
 
     def get(self, request, pk):
         try:

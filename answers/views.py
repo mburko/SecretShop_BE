@@ -8,12 +8,25 @@ from django.db.models import ObjectDoesNotExist
 from answers.models import Answers
 from answers.serializers import AnswersSerializer, AnswersSerializerForGet
 
+import coreapi
+from rest_framework.schemas import AutoSchema
+
+
+class AnswerViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('text_body')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
 
 class AnswersEditAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = AnswersSerializerForGet
     paginator_class = PageNumberPagination()
     queryset = Answers.objects.all()
+    schema = AnswerViewSchema()
 
     def get(self, request):
         queryset = self.queryset.all()
@@ -44,6 +57,7 @@ class AnswersEditByIdAPIView(APIView):
     serializer_class = AnswersSerializerForGet
     paginator_class = PageNumberPagination()
     doesnt_exist_message = {"message": "Question doesn't exist"}
+    schema = AnswerViewSchema()
 
     def get(self, request, question_id):
         queryset = Answers.objects.all().filter(question_id=question_id)

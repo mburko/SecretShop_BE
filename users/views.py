@@ -11,117 +11,141 @@ import jwt
 from datetime import datetime
 from datetime import timedelta
 
+import coreapi
+from rest_framework.schemas import AutoSchema
+
+
+class UserViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('email'), coreapi.Field('username'),
+                            coreapi.Field('password')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
 
 class RegistrationAPIView(APIView):
-	permission_classes = (AllowAny, )
-	serializer_class = RegistrationSerializer
-	
-	def post(self, request):
-		serializer = self.serializer_class(data=request.data)
+    permission_classes = (AllowAny,)
+    serializer_class = RegistrationSerializer
+    schema = UserViewSchema()
 
-		if serializer.is_valid():
-			serializer.save()
-			return Response(serializer.data,
-				status=status.HTTP_201_CREATED)
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
 
-		return Response(serializer.errors, 
-			status=status.HTTP_400_BAD_REQUEST)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors,
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginAPIView(APIView):
-	permission_classes = (AllowAny,)
+    permission_classes = (AllowAny,)
+    schema = UserViewSchema()
 
-	def post(self, request):
-		serializer = request.data
+    def post(self, request):
+        serializer = request.data
 
-		user = User.objects.filter(email=serializer["email"]).first()
+        user = User.objects.filter(email=serializer["email"]).first()
 
-		if user is None:
-			raise AuthenticationFailed("User doesn't exist")
+        if user is None:
+            raise AuthenticationFailed("User doesn't exist")
 
-		if not user.check_password(serializer["password"]):
-			raise AuthenticationFailed("Wrong password")
+        if not user.check_password(serializer["password"]):
+            raise AuthenticationFailed("Wrong password")
 
-		import os
-		from dotenv import find_dotenv, load_dotenv
-		dt = datetime.now() + timedelta(days=30)
+        import os
+        from dotenv import find_dotenv, load_dotenv
+        dt = datetime.now() + timedelta(days=30)
 
-		load_dotenv(find_dotenv('./.env'))
+        load_dotenv(find_dotenv('./.env'))
 
-		token = jwt.encode({
-			'email': user.email,
-			'exp': int(dt.timestamp())
-		}, key=os.getenv("JWT_CODE"), algorithm='HS256')
+        token = jwt.encode({
+            'email': user.email,
+            'exp': int(dt.timestamp())
+        }, key=os.getenv("JWT_CODE"), algorithm='HS256')
 
-		response = Response()
-		_cookie_lifetime = 2592000
-		response.set_cookie(key="jwt_session", value=token, httponly=True, max_age=_cookie_lifetime)
-		response.data = {
-			"jwt_session": token
-		}
+        response = Response()
+        _cookie_lifetime = 2592000
+        response.set_cookie(key="jwt_session", value=token, httponly=True,
+                            max_age=_cookie_lifetime)
+        response.data = {
+            "jwt_session": token
+        }
 
-		return response
+        return response
 
 
 class UserAPIView(APIView):
-	paginator_class = PageNumberPagination()
-	serializer_class = RegistrationSerializer
+    paginator_class = PageNumberPagination()
+    serializer_class = RegistrationSerializer
 
-	def get(self, request, pk):
-		try:
-			queryset = User.objects.get(pk=pk)
-		except ObjectDoesNotExist:
-			return Response({"message": "User with such ID doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+    def get(self, request, pk):
+        try:
+            queryset = User.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"message": "User with such ID doesn't exist"},
+                            status=status.HTTP_404_NOT_FOUND)
 
-		serializer = self.serializer_class(queryset)
+        serializer = self.serializer_class(queryset)
 
-		return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-	def get(self, request):
-		queryset = User.objects.all()
-		limit = request.GET.get("limit", len(queryset))
-		page = request.GET.get("page", None)
+    def get(self, request):
+        queryset = User.objects.all()
+        limit = request.GET.get("limit", len(queryset))
+        page = request.GET.get("page", None)
 
-		self.paginator_class.page_size = limit
-		if page is not None:
-			self.paginator_class.page = page
+        self.paginator_class.page_size = limit
+        if page is not None:
+            self.paginator_class.page = page
 
-		if not queryset:
-			return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+        if not queryset:
+            return Response({"message": "Questions not found"},
+                            status=status.HTTP_404_NOT_FOUND)
 
-		serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request),
-										   many=True)
-		return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(
+            self.paginator_class.paginate_queryset(queryset=queryset,
+                                                   request=request),
+            many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserProfileView(APIView):
-	def get(self, request):
-		token = request.COOKIES.get("jwt_session")
+    def get(self, request):
+        token = request.COOKIES.get("jwt_session")
 
-		if not token:
-			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
+        if not token:
+            return Response({"message:": "Unauthenticated"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-		import os
-		from dotenv import find_dotenv, load_dotenv
+        import os
+        from dotenv import find_dotenv, load_dotenv
 
-		load_dotenv(find_dotenv('./.env'))
+        load_dotenv(find_dotenv('./.env'))
 
-		try:
-			payload = jwt.decode(token, os.getenv("JWT_CODE"), algorithms=["HS256"])
-		except jwt.ExpiredSignatureError:
-			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            payload = jwt.decode(token, os.getenv("JWT_CODE"),
+                                 algorithms=["HS256"])
+        except jwt.ExpiredSignatureError:
+            return Response({"message:": "Unauthenticated"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-		user = User.objects.filter(email=payload["email"]).first()
+        user = User.objects.filter(email=payload["email"]).first()
 
-		return Response(RegistrationSerializer(user).data)
+        return Response(RegistrationSerializer(user).data)
 
 
 class LogOutAPIView(APIView):
-	def post(self, request):
-		response = Response()
-		response.delete_cookie("jwt_session")
-		response.data = {
-			"message": "Successful log out"
-		}
-		return response
+    schema = UserViewSchema()
 
+    def post(self, request):
+        response = Response()
+        response.delete_cookie("jwt_session")
+        response.data = {
+            "message": "Successful log out"
+        }
+        return response
