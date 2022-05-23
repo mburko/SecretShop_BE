@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from answers.models import Answers
+from answers.models import Answers, AnswerReaction
 
 
 class AnswersSerializer(serializers.ModelSerializer):
@@ -10,7 +10,9 @@ class AnswersSerializer(serializers.ModelSerializer):
             "author_id",
             "question_id",
             "text_body",
-            "date_of_publication"
+            "date_of_publication",
+            "number_of_likes",
+            "number_of_dislikes"
         )
 
 
@@ -23,3 +25,13 @@ class AnswersSerializerForGet(serializers.ModelSerializer):
             "question_id",
             "text_body"
         )
+
+
+class AnswerReactionSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = AnswerReaction
+		fields = (
+			'reaction_type',
+			'user',
+			'answer'
+		)

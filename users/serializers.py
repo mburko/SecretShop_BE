@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from users.models import User
+from users.models import User, UserFollowers
 
 import os
 
@@ -26,3 +26,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
 	def create(self, validated_data):
 		return User.objects.create_user(**validated_data)
 
+
+class ProfileSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = User
+		fields = ("__all__")
+
+
+class UserFollowerSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = UserFollowers
+		fields = ("__all__")

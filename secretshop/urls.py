@@ -20,9 +20,9 @@ from rest_framework_swagger.views import get_swagger_view
 schema_view = get_swagger_view(title='SecretShop API')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('users.urls')),
-    path('api/', include('questions.urls')),
-    path('api/', include('answers.urls')),
-    path(r'', schema_view)
+	path(r'admin/', admin.site.urls),
+	path(r'api/', include('users.urls')),
+	path(r'api/', include('questions.urls')),
+	path(r'api/', include('answers.urls')),
+	path(r'', schema_view)
 ]
