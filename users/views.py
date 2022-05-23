@@ -12,12 +12,25 @@ import jwt
 from datetime import datetime
 from datetime import timedelta
 from secretshop.utils import AuthenticationUtils
+import coreapi
+from rest_framework.schemas import AutoSchema
+
+
+class UserViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('email'), coreapi.Field('username'),
+                            coreapi.Field('password')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
 
 
 class RegistrationAPIView(APIView):
 	permission_classes = (AllowAny, )
 	serializer_class = RegistrationSerializer
-	
+	schema = UserViewSchema()
+
 	def post(self, request):
 		serializer = self.serializer_class(data=request.data)
 
@@ -32,6 +45,7 @@ class RegistrationAPIView(APIView):
 
 class LoginAPIView(APIView):
 	permission_classes = (AllowAny,)
+	schema = UserViewSchema()
 
 	def post(self, request):
 		serializer = request.data
@@ -122,6 +136,7 @@ class UserProfileView(APIView):
 
 
 class LogOutAPIView(APIView):
+	schema = UserViewSchema()
 	@AuthenticationUtils.authenticate
 	def post(self, request):
 		response = Response()

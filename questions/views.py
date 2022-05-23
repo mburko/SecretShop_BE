@@ -5,13 +5,34 @@ from rest_framework.decorators import APIView
 from rest_framework import status
 
 from django.db.models import ObjectDoesNotExist
-from questions.models import Questions, Tags, QuestionReaction
+from questions.models import Questions, Tags
 from users.models import User
 from questions.serializers import QuestionsSerializer, TagsSerializer,\
-    QuestionsAddSerializer, QuestionReactionSerializer
+    QuestionReactionSerializer
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from secretshop.utils import AuthenticationUtils
+import coreapi
+from rest_framework.schemas import AutoSchema
+
+
+class QuestionViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('title'), coreapi.Field('text_body'),
+                            coreapi.Field('tags')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
+
+
+class TagsViewSchema(AutoSchema):
+    def get_manual_fields(self, path, method):
+        extra_fields = []
+        if method.lower() in ['post', 'put']:
+            extra_fields = [coreapi.Field('tag_name')]
+        manual_fields = super().get_manual_fields(path, method)
+        return manual_fields + extra_fields
 
 
 def request_parsing(string):
@@ -36,14 +57,17 @@ def request_parsing(string):
 
 class QuestionsEditAPIView(APIView):
     permission_classes = (AllowAny,)
-    serializer_class = QuestionsAddSerializer
+    serializer_class = QuestionsSerializer
     paginator_class = PageNumberPagination()
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
+    schema = QuestionViewSchema()
 
     def get(self, request):
         queryset = Questions.objects.all()
         limit = request.GET.get("limit", 42)  # len(queryset))
         page = request.GET.get("page", None)
+        # ordering_field = request.GET.get("order_by", "fame_index")
+        # order_direction = "" if request.GET.get("direction", "desc") == "asc" else "-"
         try: #Formulating the tag list, and add the '#' symbol to the beginning
             search_tags = ["#" + i for i in request_parsing(request.GET.get("tags")).split(',')]
         except AttributeError:
@@ -102,6 +126,7 @@ class QuestionsEditByIdAPIView(APIView):
     paginator_class = PageNumberPagination
     order_by_list = ("fame_index", "date_of_publication", "number_of_likes", "number_of_comments", "number_of_views")
     doesnt_exist_message = {"message": "Question doesn't exist"}
+    schema = QuestionViewSchema()
 
     def get(self, request, pk):
         try:
@@ -137,6 +162,7 @@ class TagsEditAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = TagsSerializer
     paginator_class = PageNumberPagination()
+    schema = TagsViewSchema()
 
     def get(self, request):
         limit = request.GET.get("limit", None)
@@ -167,6 +193,7 @@ class TagsEditByIdAPIView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = TagsSerializer
     doesnt_exist_message = {"message": "Tag doesn't exist"}
+    schema = TagsViewSchema()
 
     def get(self, request, pk):
         try:
