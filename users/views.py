@@ -103,8 +103,7 @@ class UserProfileView(APIView):
 	serializer_class = ProfileSerializer
 
 	def get(self, request):
-		token = request.COOKIES.get("jwt_session")
-
+		token = request.headers.get("jwt_session")
 		if not token:
 			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
 

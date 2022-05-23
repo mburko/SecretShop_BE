@@ -6,6 +6,7 @@ from rest_framework import status
 
 from django.db.models import ObjectDoesNotExist
 from answers.models import Answers, AnswerReaction
+from questions.models import Questions
 from answers.serializers import \
 	AnswersSerializer, AnswersSerializerForGet, AnswerReactionSerializer
 
@@ -27,12 +28,16 @@ class AnswersEditAPIView(APIView):
         page = request.GET.get("page", None)
         author_id = request.GET.get("author_id")
         order_by = request.GET.get("order_by")
+        question_id = request.GET.get("question_id")
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
 
         if author_id is not None:
             queryset = queryset.filter(author_id__exact=author_id)
+
+        if question_id is not None:
+            queryset = queryset.filter(question_id__exact=question_id)
 
         if order_by is not None:
             queryset = queryset.order_by(order_by)
@@ -52,6 +57,10 @@ class AnswersEditAPIView(APIView):
 			data=request.data)
         if serializer.is_valid():
             serializer.save()
+            question = Questions.objects.get(pk=request.data["question_id"])
+            #question.number_of_comments = question.number_of_comments + 1
+            question.number_of_comments = Answers.objects.filter(question_id=question.id).count()
+            question.save()
             return Response(
 				data=serializer.data, 
 				status=status.HTTP_201_CREATED)
@@ -67,17 +76,13 @@ class AnswersEditByIdAPIView(APIView):
     paginator_class = PageNumberPagination()
     doesnt_exist_message = {"message": "Question doesn't exist"}
 
-    def get(self, request, question_id):
-        queryset = Answers.objects.all().filter(
-			question_id=question_id)
-        if not queryset:
-            return Response(
-				data=self.doesnt_exist_message, 
-				status=status.HTTP_404_NOT_FOUND)
-
-        serializer = AnswersSerializer(queryset, many=True)
-        return Response(serializer.data, 
-			status=status.HTTP_200_OK)
+    def get(self, request, pk):
+        try:
+            answer = Answers.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
+        serializer = AnswersSerializer(answer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         try:
