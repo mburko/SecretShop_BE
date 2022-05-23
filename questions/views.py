@@ -11,6 +11,7 @@ from questions.serializers import QuestionsSerializer, TagsSerializer,\
     QuestionsAddSerializer, QuestionReactionSerializer
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from secretshop.utils import AuthenticationUtils
 
 
 def request_parsing(string):
@@ -81,6 +82,7 @@ class QuestionsEditAPIView(APIView):
             self.paginator_class.paginate_queryset(queryset=queryset.distinct(), request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @AuthenticationUtils.authenticate
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -109,6 +111,7 @@ class QuestionsEditByIdAPIView(APIView):
         serializer = self.serializer_class(question)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @AuthenticationUtils.authenticate
     def put(self, request, pk):
         try:
             question = Questions.objects.get(pk=pk)
@@ -120,6 +123,7 @@ class QuestionsEditByIdAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @AuthenticationUtils.authenticate
     def delete(self, request, pk):
         try:
             question = Questions.objects.get(pk=pk)
@@ -150,6 +154,7 @@ class TagsEditAPIView(APIView):
         serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request), many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @AuthenticationUtils.authenticate
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -172,6 +177,7 @@ class TagsEditByIdAPIView(APIView):
         serializer = self.serializer_class(tag)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @AuthenticationUtils.authenticate
     def delete(self, request, pk):
         try:
             tag = Tags.objects.get(pk=pk)
@@ -185,6 +191,7 @@ class QuestionReactionView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = QuestionReactionSerializer
 
+    @AuthenticationUtils.authenticate
     def post(self, request):
         serializer = self.serializer_class(
             data=request.data)

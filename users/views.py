@@ -11,6 +11,7 @@ from users.models import User, UserFollowers
 import jwt
 from datetime import datetime
 from datetime import timedelta
+from secretshop.utils import AuthenticationUtils
 
 
 class RegistrationAPIView(APIView):
@@ -78,7 +79,7 @@ class UserAPIView(APIView):
 			self.paginator_class.page = page
 
 		if not queryset:
-			return Response({"message": "Questions not found"}, status=status.HTTP_404_NOT_FOUND)
+			return Response({"message": "Users not found"}, status=status.HTTP_404_NOT_FOUND)
 
 		serializer = self.serializer_class(self.paginator_class.paginate_queryset(queryset=queryset, request=request),
 										   many=True)
@@ -102,20 +103,16 @@ class UserAPIGetByIdView(APIView):
 class UserProfileView(APIView):
 	serializer_class = ProfileSerializer
 
+	@AuthenticationUtils.authenticate
 	def get(self, request):
 		token = request.headers.get("Authorization")
-		if not token:
-			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
 
 		import os
 		from dotenv import find_dotenv, load_dotenv
 
 		load_dotenv(find_dotenv('./.env'))
 
-		try:
-			payload = jwt.decode(token, os.getenv("JWT_CODE"), algorithms=["HS256"])
-		except jwt.ExpiredSignatureError:
-			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
+		payload = jwt.decode(token, os.getenv("JWT_CODE"), algorithms=["HS256"])
 
 		user = User.objects.filter(email=payload["email"]).first()
 
@@ -125,6 +122,7 @@ class UserProfileView(APIView):
 
 
 class LogOutAPIView(APIView):
+	@AuthenticationUtils.authenticate
 	def post(self, request):
 		response = Response()
 		response.delete_cookie("jwt_session")
@@ -137,6 +135,7 @@ class LogOutAPIView(APIView):
 class UserFollowerAPIView(APIView):
 	serializer_class = UserFollowerSerializer
 
+	@AuthenticationUtils.authenticate
 	def post(self, request):
 		request_data = request.data
 
@@ -164,11 +163,26 @@ class UserFollowerAPIView(APIView):
 			return Response(serializer.errors,
 							status=status.HTTP_400_BAD_REQUEST)
 
+	@AuthenticationUtils.authenticate
 	def get(self, request):
 		queryset = UserFollowers.objects.all()
-
 		if not queryset:
 			return Response({"message": "Follows not found"},
+							status=status.HTTP_404_NOT_FOUND)
+
+		serializer = self.serializer_class(queryset, many=True)
+		return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserFollowerByIdAPIView(APIView):
+	serializer_class = UserFollowerSerializer
+
+	@AuthenticationUtils.authenticate
+	def get(self, request, pk):
+		queryset = UserFollowers.objects.filter(user_follower=pk)
+
+		if not queryset:
+			return Response({"message": "You haven't followed yet"},
 							status=status.HTTP_404_NOT_FOUND)
 
 		serializer = self.serializer_class(queryset, many=True)

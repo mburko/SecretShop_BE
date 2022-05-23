@@ -8,7 +8,8 @@ from django.db.models import ObjectDoesNotExist
 from answers.models import Answers, AnswerReaction
 from questions.models import Questions
 from answers.serializers import \
-	AnswersSerializer, AnswersSerializerForGet, AnswerReactionSerializer
+    AnswersSerializer, AnswersSerializerForGet, AnswerReactionSerializer
+from secretshop.utils import AuthenticationUtils
 
 
 class AnswersEditAPIView(APIView):
@@ -21,8 +22,8 @@ class AnswersEditAPIView(APIView):
         queryset = self.queryset.all()
         if not queryset:
             return Response(
-				data={"message": "Questions not found"}, 
-				status=status.HTTP_404_NOT_FOUND)
+                data={"message": "Questions not found"},
+                status=status.HTTP_404_NOT_FOUND)
 
         limit = request.GET.get("limit", len(queryset))
         page = request.GET.get("page", None)
@@ -43,31 +44,33 @@ class AnswersEditAPIView(APIView):
             queryset = queryset.order_by(order_by)
 
         serializer = AnswersSerializer(
-			self.paginator_class.paginate_queryset(
-				queryset=queryset, 
-				request=request),
+            self.paginator_class.paginate_queryset(
+                queryset=queryset,
+                request=request),
             many=True)
 
         return Response(
-			data=serializer.data, 
-			status=status.HTTP_200_OK)
+            data=serializer.data,
+            status=status.HTTP_200_OK)
 
+    @AuthenticationUtils.authenticate
     def post(self, request):
         serializer = self.serializer_class(
-			data=request.data)
+            data=request.data)
         if serializer.is_valid():
             serializer.save()
             question = Questions.objects.get(pk=request.data["question_id"])
-            #question.number_of_comments = question.number_of_comments + 1
-            question.number_of_comments = Answers.objects.filter(question_id=question.id).count()
+            # question.number_of_comments = question.number_of_comments + 1
+            question.number_of_comments = Answers.objects.filter(
+                question_id=question.id).count()
             question.save()
             return Response(
-				data=serializer.data, 
-				status=status.HTTP_201_CREATED)
+                data=serializer.data,
+                status=status.HTTP_201_CREATED)
 
         return Response(
-			data=serializer.errors, 
-			status=status.HTTP_400_BAD_REQUEST)
+            data=serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST)
 
 
 class AnswersEditByIdAPIView(APIView):
@@ -80,50 +83,54 @@ class AnswersEditByIdAPIView(APIView):
         try:
             answer = Answers.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(self.doesnt_exist_message, status=status.HTTP_404_NOT_FOUND)
+            return Response(self.doesnt_exist_message,
+                            status=status.HTTP_404_NOT_FOUND)
         serializer = AnswersSerializer(answer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @AuthenticationUtils.authenticate
     def put(self, request, pk):
         try:
             answer = Answers.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
-				data=self.doesnt_exist_message, 
-				status=status.HTTP_404_NOT_FOUND)
+                data=self.doesnt_exist_message,
+                status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(
-			instance=answer, 
-			data=request.data)
+            instance=answer,
+            data=request.data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(
-				data=serializer.data, 
-				status=status.HTTP_200_OK)
+                data=serializer.data,
+                status=status.HTTP_200_OK)
 
         return Response(
-			data=serializer.errors, 
-			status=status.HTTP_400_BAD_REQUEST)
+            data=serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST)
 
+    @AuthenticationUtils.authenticate
     def delete(self, request, pk):
         try:
             answer = Answers.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
-				data=self.doesnt_exist_message, 
-				status=status.HTTP_404_NOT_FOUND)
+                data=self.doesnt_exist_message,
+                status=status.HTTP_404_NOT_FOUND)
 
         answer.delete()
         return Response(
-			data={"message": f"Question {pk} was successfully deleted"},
-			status=status.HTTP_200_OK)
+            data={"message": f"Question {pk} was successfully deleted"},
+            status=status.HTTP_200_OK)
 
 
 class AnswerReactionView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = AnswerReactionSerializer
 
+    @AuthenticationUtils.authenticate
     def post(self, request):
         serializer = self.serializer_class(
             data=request.data)
@@ -165,7 +172,7 @@ class AnswerReactionView(APIView):
                 return Response(
                     data={"Error": "Something is wrong with db."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                
+
         return Response(
             data=serializer.errors,
             status=status.HTTP_400_BAD_REQUEST)
