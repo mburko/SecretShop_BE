@@ -1,13 +1,13 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from users.serializers import RegistrationSerializer, UsersSerializer,\
-	ProfileSerializer
+	ProfileSerializer, UserFollowerSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.pagination import PageNumberPagination
-from users.models import User
+from users.models import User, UserFollowers
 import jwt
 from datetime import datetime
 from datetime import timedelta
@@ -103,7 +103,7 @@ class UserProfileView(APIView):
 	serializer_class = ProfileSerializer
 
 	def get(self, request):
-		token = request.headers.get("jwt_session")
+		token = request.headers.get("Authorization")
 		if not token:
 			return Response({"message:": "Unauthenticated"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -133,3 +133,43 @@ class LogOutAPIView(APIView):
 		}
 		return response
 
+
+class UserFollowerAPIView(APIView):
+	serializer_class = UserFollowerSerializer
+
+	def post(self, request):
+		request_data = request.data
+
+		if request_data["user_follower"] == request_data["user_following"]:
+			return Response({"Error": "Cannot follow yourself"},
+							status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			currentFollower = UserFollowers.objects.get(
+				user_follower=request_data["user_follower"],
+				user_following=request_data["user_following"]
+			)
+			user_name = User.objects.get(pk=request_data["user_following"])
+			UserFollowers.objects.filter(pk=currentFollower.pk).delete()
+
+			return Response({"Message": f"You have successfully unfollowed {user_name}"},
+							status=status.HTTP_200_OK)
+		except ObjectDoesNotExist:
+
+			serializer = self.serializer_class(data=request_data)
+			if serializer.is_valid():
+				serializer.save()
+				return Response(serializer.data,
+								status=status.HTTP_201_CREATED)
+			return Response(serializer.errors,
+							status=status.HTTP_400_BAD_REQUEST)
+
+	def get(self, request):
+		queryset = UserFollowers.objects.all()
+
+		if not queryset:
+			return Response({"message": "Follows not found"},
+							status=status.HTTP_404_NOT_FOUND)
+
+		serializer = self.serializer_class(queryset, many=True)
+		return Response(serializer.data, status=status.HTTP_200_OK)

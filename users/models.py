@@ -72,3 +72,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 			'exp': int(dt.timestamp())
 		}, key=key, algorithm='HS256')
 		return token.decode('utf-8')
+
+
+class UserFollowers(models.Model):
+	user_follower = models.ForeignKey(
+		User,
+		on_delete=models.CASCADE,
+		blank=False,
+		related_name="user_follower"
+	)
+	user_following = models.ForeignKey(
+		User,
+		on_delete=models.CASCADE,
+		blank=False,
+		related_name="user_following"
+	)
