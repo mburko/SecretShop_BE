@@ -7,7 +7,8 @@ from rest_framework import status
 from django.db.models import ObjectDoesNotExist
 from questions.models import Questions, Tags
 from users.models import User
-from questions.serializers import QuestionsSerializer, TagsSerializer
+from questions.serializers import QuestionsSerializer, TagsSerializer,\
+    QuestionReactionSerializer
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from secretshop.utils import AuthenticationUtils
