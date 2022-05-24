@@ -5,10 +5,11 @@ from rest_framework.decorators import APIView
 from rest_framework import status
 
 from django.db.models import ObjectDoesNotExist
-from questions.models import Questions, Tags
+from questions.models import Questions, Tags, QuestionReaction
 from users.models import User
 from questions.serializers import QuestionsSerializer, TagsSerializer,\
     QuestionReactionSerializer
+from collections import Counter
 
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from secretshop.utils import AuthenticationUtils
@@ -77,9 +78,28 @@ class QuestionsEditAPIView(APIView):
         search_query = SearchQuery(search)
         order_by = request.GET.get("order_by")
         author = request.GET.get("author")
+        user_id = request.GET.get("user")
         self.paginator_class.page_size = limit
         if page is not None:
             self.paginator_class.page = page
+
+        if user_id is not None:
+            # Algorithm on Panads
+            # user_likes = data[data["users_id"] == user_id]['question'].values
+            # friends = unique(data[data['question'].isin(user_likes)]['users_id'], return_counts=True)
+            # #Return for friends the number to create similarity coefficients (Future improvement)
+            # recommendations = unique(data["question"][data["users_id"].isin(friends[0])], return_counts=True)
+            # rec_top = pd.Series(recommendations[1], index=recommendations[0]).sort_values(ascending=False)
+            # return rec_top.values[:n]
+
+            # Algorithm on Django
+            queryset2 = QuestionReaction.objects.all()
+            user_likes = queryset2.filter(user__exact=user_id, reaction_type__exact=1).values('question')
+            friends = queryset2.filter(question__in=user_likes, reaction_type__exact=1).values('user') \
+                .distinct().exclude(user=user_id)
+            recommendations = queryset2.filter(user__in=friends)
+            rec_top = [i[0].question.id for i in Counter(recommendations).most_common()]
+            queryset = queryset.filter(id__in=rec_top)
 
         if search_tags is not None:  # Search for questions that contain at least one of the listed tags
             tags_id = Tags.objects.filter(tag_name__in=search_tags).values_list("id")
